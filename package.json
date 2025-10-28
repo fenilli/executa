@@ -1,0 +1,49 @@
+{
+    "type": "module",
+    "name": "executa",
+    "version": "0.1.0",
+    "description": "Lightweight, secure evaluator for JavaScript-like expressions with a sandboxed grammar engine.",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": "./dist/index.js",
+        "./*": "./*"
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "test": "vitest",
+        "build": "tsdown",
+        "dev": "npm run build -- --watch --on-success 'node dist/index.js'",
+        "prepublish": "npm run build"
+    },
+    "author": "Luiz Gustavo Siqueira Fenilli <gustavofenilli@gmail.com> (https://github.com/fenilli)",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/fenilli/executa.git"
+    },
+    "bugs": {
+        "url": "https://github.com/fenilli/executa/issues"
+    },
+    "homepage": "https://github.com/fenilli/executa#readme",
+    "keywords": [
+        "sandbox",
+        "expression",
+        "evaluator",
+        "grammar",
+        "parser",
+        "typescript"
+    ],
+    "devDependencies": {
+        "@types/node": "^24.9.1",
+        "tsdown": "^0.15.10",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.4"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}
