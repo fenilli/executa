@@ -1,6 +1,12 @@
 import { describe, test, expect } from 'vitest';
-import { parse } from '../src/parser'
-import { evaluate } from '../src/evaluator'
+import { parse } from '../src/parser';
+import { createEvaluator } from '../src/evaluator';
+
+const safeFns = {
+    sum: (a: number, b: number) => a + b,
+};
+
+const evaluate = createEvaluator(safeFns);
 
 describe('evaluate', () => {
     test('evaluates numeric and string literals', () => {
@@ -68,8 +74,9 @@ describe('evaluate', () => {
     });
 
     test('evaluates call expressions', () => {
-        const ctx = { sum: (a: number, b: number) => a + b };
-
-        expect(evaluate(parse('sum(2, 3)'), ctx)).toBe(5);
+        expect(evaluate(parse('sum(2, 3)'))).toBe(5);
+        expect(evaluate(parse('"abc".includes("a")'))).toBe(true);
+        expect(() => evaluate(parse('"abc".arbritary("a")'))).toThrowError();
+        expect(() => evaluate(parse('arbritary(2, 3)'))).toThrowError();
     });
 });

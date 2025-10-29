@@ -18,8 +18,9 @@ Unary           ::= [ "!" | "-" | "+" ] Unary
                     | Primary ;
 
 Primary         ::= Literal
-                    | Identifier MemberAccess
-                    | "(" Expression ")" ;
+                    | Identifier
+                    | "(" Expression ")"
+                    | MemberAccess? ;
 
 MemberAccess    ::= { ( "." Identifier [ Arguments ] )
                     | ( "?." Identifier [ Arguments ] )

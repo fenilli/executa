@@ -328,28 +328,34 @@ function parseUnary(state: ParserState): Expression {
     return parsePrimary(state);
 }
 
-// Primary ::= Literal | Identifier MemberAccess | "(" Expression ")"
+// Primary ::= Literal | Identifier | "(" Expression ")" | MemberAccess?
 function parsePrimary(state: ParserState): Expression {
     const token = current(state);
 
     switch (token.kind) {
-        case TokenKind.NUMBER: eat(state, TokenKind.NUMBER); return factory.createNumericLiteral(Number(token.value));
-        case TokenKind.STRING: eat(state, TokenKind.STRING); return factory.createStringLiteral(token.value.slice(1, -1));
+        case TokenKind.NUMBER:
+            eat(state, TokenKind.NUMBER);
+            return parseMemberAccess(state, factory.createNumericLiteral(Number(token.value)));
+        case TokenKind.STRING:
+            eat(state, TokenKind.STRING);
+            return parseMemberAccess(state, factory.createStringLiteral(token.value.slice(1, -1)));
         case TokenKind.TRUE:
         case TokenKind.FALSE:
-            eat(state, token.kind); return factory.createBooleanLiteral(token.kind === TokenKind.TRUE ? true : false);
-        case TokenKind.NULL: eat(state, TokenKind.NULL); return factory.createNullLiteral();
+            eat(state, token.kind);
+            return parseMemberAccess(state, factory.createBooleanLiteral(token.kind === TokenKind.TRUE ? true : false));
+        case TokenKind.NULL:
+            eat(state, TokenKind.NULL);
+            return parseMemberAccess(state, factory.createNullLiteral());
 
         case TokenKind.IDENTIFIER:
             eat(state, TokenKind.IDENTIFIER);
-            const expr: Expression = factory.createIdentifier(token.value);
-            return parseMemberAccess(state, expr);
+            return parseMemberAccess(state, factory.createIdentifier(token.value));
 
         case TokenKind.LEFT_PAREN:
             eat(state, TokenKind.LEFT_PAREN);
             const inner = parseExpression(state);
             eat(state, TokenKind.RIGHT_PAREN);
-            return factory.createParenthesizedExpression(inner);
+            return parseMemberAccess(state, factory.createParenthesizedExpression(inner));
 
         default:
             throw new SyntaxError(`Unexpected token: ${token.value}, expected primary token.`);
