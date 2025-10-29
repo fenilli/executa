@@ -209,7 +209,11 @@ factory.createIdentifier(name: string): Identifier
 All identifiers used in expressions must exist in the provided Context when calling evaluate.
 
 ```ts
-interface Context {
-    [name: string]: any;
+type Primitive = string | number | boolean | null;
+
+type SafeValue = Primitive | SafeValue[] | { [key: string]: SafeValue };
+
+export interface Context {
+    [name: string]: SafeValue;
 }
 ```

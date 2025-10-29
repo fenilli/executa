@@ -73,7 +73,7 @@ const defaultWhitelistedFns = Object.freeze({
         x == null || (typeof x === 'string' || Array.isArray(x)) && x.length === 0,
 });
 
-export const createEvaluator = (whitelistedFns: Readonly<Record<string, Function>>) => {
+export const createEvaluator = (whitelistedFns: Readonly<Record<string, Function>> = {}) => {
     const _whitelistedFns: Readonly<Record<string, Function>> = Object.freeze({
         ...defaultWhitelistedFns,
         ...whitelistedFns,

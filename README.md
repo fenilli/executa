@@ -11,10 +11,14 @@
 - Support for:
   - Unary (`!`, `+`, `-`) and binary operations (`+`, `-`, `*`, `/`, `%`, `&&`, `||`, `??`, `==`, `!=`, `>`, `>=`, `<`, `<=`)
   - Parentheses and operator precedence
-  - Member access (`obj.prop`, `obj?.prop`) and array access (`obj[prop]`)
-  - Function calls
+  - Member access andoptional chaining:
+    - Dot access: obj.prop
+    - Optional chaining: obj?.prop
+    - Bracket access: obj[prop]
+  - Function calls on identifiers or safe objects
   - Literals: numbers, strings, booleans, `null`
 - Sandboxed evaluation with a user-provided context
+- Safe methods for strings, arrays, numbers, and dates
 - Written in TypeScript
 
 ---
@@ -28,14 +32,16 @@ npm install executa
 ## Usage
 
 ```ts
-import { parse, evaluate } from 'executa';
+import { parse, createEvaluator } from 'executa';
+
+const evaluate = createEvaluator();
 
 const program = parse('user.age * 2 >= 20 && user.active');
 const context = {
   user: { age: 12, active: true },
 };
 
-console.log(evaluate(program, context)); // true or false
+console.log(evaluate(program, context)); // true
 ```
 
 ## API
@@ -45,7 +51,7 @@ Executa exposes functions and types to parse and evaluate expressions safely.
 ### Main Functions
 
 - `parse(source: string): Program` — Parse a string expression into an AST.
-- `evaluate(program: Program, context?: Context): any` — Evaluate a parsed program in a sandboxed context.
+- `createEvaluator = (whitelistedFns?: Readonly<Record<string, Function>>): (program: Program, context?: Context) => any` — Returns an evaluator that executes ASTs in a sandboxed context. Optional custom functions can be provided.
 
 ### Documentation
 
@@ -60,23 +66,28 @@ The grammar is inspired by JavaScript expressions, including:
 - Arithmetic: `+`, `-`, `*`, `/`, `%`
 - Unary operators: `!`, `+`, `-`
 - Member access: `obj.prop`, `obj?.prop`, `obj[prop]`
-- Function calls: `fn(arg1, arg2)`
+- Function calls on identifiers or safe objects: `fn(arg1, arg2)`, `(expr).fn()`
 - Parentheses for grouping
 - Literals: `number`, `string`, `boolean`, `null`
 - Identifiers: alphanumeric names starting with letter, `$`, or `_`
 
 For full grammar details, see the [EBNF](docs/ebnf.md).
 
-## Example
+## Safe Methods
 
-```ts
-import { parse, evaluate } from 'executa';
+Supported automatically on primitive and array objects:
 
-const program = parse('Math.max(a, b) * 2 ?? 10');
-const context = { a: 5, b: 3, Math: Math };
+**String:** `length`, `startsWith`, `endsWith`, `includes`, `indexOf`, `slice`, `toLowerCase`, `toUpperCase`, `trim`, `trimStart`, `trimEnd`
 
-console.log(evaluate(program, context)); // 10
-```
+**Number:** `toFixed`, `toPrecision`, `toExponential`
+
+**Array:** `length`, `includes`, `indexOf`, `slice`, `concat`, `join`
+
+**Date:** `getTime`, `toISOString`, `getFullYear`, `getMonth`, `getDate`, `getDay`, `getHours`, `getMinutes`, `getSeconds`
+
+## Whitelisted built-in functions
+
+`abs`, `max`, `min`, `round`, `floor`, `ceil`, `pow`, `sqrt`, `sign`, `clamp`, `inRange`, `isEmpty`
 
 ## Development
 ```bash
