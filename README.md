@@ -1,6 +1,6 @@
 # Executa
 
-**Executa** is a lightweight, secure evaluator for JavaScript-like expressions. It parses and evaluates expressions in a sandboxed environment, allowing safe computation without giving access to the global scope.
+**Executa** is a lightweight and secure evaluator for JavaScript-like expressions. It parses and evaluates expressions in a sandboxed environment, allowing controlled computation without exposing the global scope.
 
 ---
 
@@ -9,16 +9,20 @@
 - Lexical analysis (tokenization) of JS-like expressions
 - Full parser for arithmetic, logical, and comparison operations
 - Support for:
-  - Unary (`!`, `+`, `-`) and binary operations (`+`, `-`, `*`, `/`, `%`, `&&`, `||`, `??`, `==`, `!=`, `>`, `>=`, `<`, `<=`)
+  - Unary (`!`, `+`, `-`) and binary (`+`, `-`, `*`, `/`, `%`, `&&`, `||`, `??`, `==`, `!=`, `>`, `>=`, `<`, `<=`) operators
   - Parentheses and operator precedence
-  - Member access andoptional chaining:
+  - Member access and optional chaining:
     - Dot access: obj.prop
     - Optional chaining: obj?.prop
     - Bracket access: obj[prop]
-  - Function calls on identifiers or safe objects
+  - Function calls
   - Literals: numbers, strings, booleans, `null`
 - Sandboxed evaluation with a user-provided context
-- Safe methods for strings, arrays, numbers, and dates
+- Built-in functions
+  - Math: `abs`, `max`, `min`, `round`, `floor`, `ceil`, `pow`, `sqrt`, `sign`, `clamp`, `inRange`
+  - String: `trim`, `toLowerCase`, `toUpperCase`
+  - Array: `length`, `includes`
+  - Utility: `isEmpty`
 - Written in TypeScript
 
 ---
@@ -46,48 +50,55 @@ console.log(evaluate(program, context)); // true
 
 ## API
 
-Executa exposes functions and types to parse and evaluate expressions safely.
+- `parse(source: string): Program` — Parses a string expression into an abstract syntax tree (AST).
+- `createEvaluator(builtins?: Record<string, Function>): (program: Program, context?: Context) => any` — Creates a secure evaluator using optional built-in functions.
+  - Defaults to `builtinFns`, a curated set of safe built-in utilities.
+- `builtinFns: Readonly<Record<string, Function>>` — Default safe functions available in the evaluator.
 
-### Main Functions
-
-- `parse(source: string): Program` — Parse a string expression into an AST.
-- `createEvaluator = (whitelistedFns?: Readonly<Record<string, Function>>): (program: Program, context?: Context) => any` — Returns an evaluator that executes ASTs in a sandboxed context. Optional custom functions can be provided.
-
-### Documentation
-
-For full details on the AST, SyntaxKinds, and factory methods, see the [API Reference](./docs/api.md).
+See the **[API Reference](./docs/api.md)** for a complete overview of the public API.
 
 ## Supported Grammar
 
-The grammar is inspired by JavaScript expressions, including:
+Executa supports JavaScript-like expressions including:
 
-- Logical operators: `&&`, `||`, `??`
+- Logical: `&&`, `||`, `??`
 - Comparison: `<`, `<=`, `>`, `>=`, `==`, `!=`
 - Arithmetic: `+`, `-`, `*`, `/`, `%`
-- Unary operators: `!`, `+`, `-`
+- Unary: `!`, `+`, `-`
 - Member access: `obj.prop`, `obj?.prop`, `obj[prop]`
-- Function calls on identifiers or safe objects: `fn(arg1, arg2)`, `(expr).fn()`
-- Parentheses for grouping
+- Function calls: `fn(arg1, arg2)`
+- Grouping
 - Literals: `number`, `string`, `boolean`, `null`
 - Identifiers: alphanumeric names starting with letter, `$`, or `_`
 
-For full grammar details, see the [EBNF](docs/ebnf.md).
+For full grammar details, see the [EBNF](./docs/ebnf.md).
 
-## Safe Methods
+## Examples
 
-Supported automatically on primitive and array objects:
+```ts
+// Basic usage
+import { parse, createEvaluator } from 'executa';
 
-**String:** `length`, `startsWith`, `endsWith`, `includes`, `indexOf`, `slice`, `toLowerCase`, `toUpperCase`, `trim`, `trimStart`, `trimEnd`
+const evaluate = createEvaluator(); // built-ins are already included if not specified
+const program = parse('length(user.name) > 3 && !isEmpty(user.tags)');
+const context = { user: { name: 'John', tags: ['a', 'b'] } };
 
-**Number:** `toFixed`, `toPrecision`, `toExponential`
+console.log(evaluate(program, context)); // true
 
-**Array:** `length`, `includes`, `indexOf`, `slice`, `concat`, `join`
+// Extending built-in functions
+import { parse, createEvaluator, builtinFns } from 'executa';
 
-**Date:** `getTime`, `toISOString`, `getFullYear`, `getMonth`, `getDate`, `getDay`, `getHours`, `getMinutes`, `getSeconds`
+const customFns = {
+  ...builtinFns,
+  upperFirst: (s: string) => s.charAt(0).toUpperCase() + s.slice(1),
+};
 
-## Whitelisted built-in functions
+const evaluate = createEvaluator(customFns);
+const program = parse('upperFirst(user.name) == "John"');
+const context = { user: { name: 'john' } };
 
-`abs`, `max`, `min`, `round`, `floor`, `ceil`, `pow`, `sqrt`, `sign`, `clamp`, `inRange`, `isEmpty`
+console.log(evaluate(program, context)); // true
+```
 
 ## Development
 ```bash

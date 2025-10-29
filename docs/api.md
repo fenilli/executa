@@ -1,21 +1,37 @@
 # Executa API Reference
 
-This document details the **AST structure**, **SyntaxKind enums**, and the **factory** methods for programmatically creating nodes.
+This document describes the core data structures, enumerations, and helper functions used by Executa to parse, represent, and evaluate expressions. It serves as a technical reference for contributors and users who want to understand or extend the library.
 
 ---
 
-## AST
+## Overview
 
-### Literal
+Executa parses JavaScript-like expressions into a structured AST that can be evaluated safely within a sandboxed context.
+
+The public API provides:
+- Typed node definitions for the AST
+- The `SyntaxKind` enum that classifies each node
+- Factory helpers for constructing nodes
+- Context typing for evaluation environments
+- Built-in functions for safe evaluation
+
+---
+
+## AST Structure
+
+Every parsed expression is represented as a tree of `Expression` nodes.
+
+### Program
+
 ```ts
-export type Literal =
-    | NumericLiteral
-    | StringLiteral
-    | BooleanLiteral
-    | NullLiteral;
+export interface Program {
+    kind: SyntaxKind.Program;
+    expression: Expression;
+}
 ```
 
 ### Expression
+
 ```ts
 export type Expression =
     | BinaryExpression
@@ -27,42 +43,20 @@ export type Expression =
     | Identifier;
 ```
 
-### BinaryTokens
+### Literal
+
 ```ts
-export type BinaryTokens =
-    | SyntaxKind.GreaterToken
-    | SyntaxKind.LessToken
-    | SyntaxKind.PlusToken
-    | SyntaxKind.MinusToken
-    | SyntaxKind.StarToken
-    | SyntaxKind.SlashToken
-    | SyntaxKind.PercentToken
-    | SyntaxKind.PipePipeToken
-    | SyntaxKind.AmpAmpToken
-    | SyntaxKind.QuestionQuestionToken
-    | SyntaxKind.EqualEqualToken
-    | SyntaxKind.BangEqualToken
-    | SyntaxKind.GreaterEqualToken
-    | SyntaxKind.LessEqualToken;
+export type Literal =
+    | NumericLiteral
+    | StringLiteral
+    | BooleanLiteral
+    | NullLiteral;
 ```
 
-### UnaryTokens
-```ts
-export type UnaryTokens =
-    | SyntaxKind.BangToken
-    | SyntaxKind.MinusToken
-    | SyntaxKind.PlusToken;
-```
+---
 
-### Program
-```ts
-export interface Program {
-    kind: SyntaxKind.Program;
-    expression: Expression;
-}
-```
+### Node Definitions
 
-### BinaryExpression
 ```ts
 export interface BinaryExpression {
     kind: SyntaxKind.BinaryExpression;
@@ -70,85 +64,66 @@ export interface BinaryExpression {
     left: Expression;
     right: Expression;
 }
-```
 
-### UnaryExpression
-```ts
 export interface UnaryExpression {
     kind: SyntaxKind.UnaryExpression;
     operator: UnaryTokens;
     argument: Expression;
 }
-```
 
-### CallExpression
-```ts
 export interface CallExpression {
     kind: SyntaxKind.CallExpression;
     callee: Expression;
     args: Expression[];
 }
-```
 
-### MemberExpression
-```ts
 export interface MemberExpression {
     kind: SyntaxKind.MemberExpression;
     object: Expression;
     property: Expression;
     optional: boolean;
 }
-```
 
-### ParenthesizedExpression
-```ts
 export interface ParenthesizedExpression {
     kind: SyntaxKind.ParenthesizedExpression;
     expression: Expression;
 }
-```
 
-### NumericLiteral
-```ts
-export interface NumericLiteral {
-    kind: SyntaxKind.NumericLiteral;
-    value: number;
-}
-```
-
-### StringLiteral
-```ts
-export interface StringLiteral {
-    kind: SyntaxKind.StringLiteral;
-    value: string;
-}
-```
-
-### BooleanLiteral
-```ts
-export interface BooleanLiteral {
-    kind: SyntaxKind.BooleanLiteral;
-    value: boolean;
-}
-```
-
-### NullLiteral
-```ts
-export interface NullLiteral {
-    kind: SyntaxKind.NullLiteral;
-    value: null;
-}
-```
-
-### Identifier
-```ts
 export interface Identifier {
     kind: SyntaxKind.Identifier;
     name: string;
 }
 ```
 
-## SyntaxKind enum
+---
+
+### Literals
+
+```ts
+export interface NumericLiteral {
+    kind: SyntaxKind.NumericLiteral;
+    value: number;
+}
+
+export interface StringLiteral {
+    kind: SyntaxKind.StringLiteral;
+    value: string;
+}
+
+export interface BooleanLiteral {
+    kind: SyntaxKind.BooleanLiteral;
+    value: boolean;
+}
+
+export interface NullLiteral {
+    kind: SyntaxKind.NullLiteral;
+    value: null;
+}
+```
+
+---
+
+### SyntaxKind enum
 
 ```ts
 export enum SyntaxKind {
@@ -186,9 +161,9 @@ export enum SyntaxKind {
 }
 ```
 
-## Factory
+---
 
-The factory object provides helper methods to create AST nodes programmatically:
+## Factory
 
 ```ts
 factory.createProgram(expression: Expression): Program
@@ -206,7 +181,7 @@ factory.createIdentifier(name: string): Identifier
 
 ## Context
 
-All identifiers used in expressions must exist in the provided Context when calling evaluate.
+All identifiers in expressions are resolved against the provided Context object.
 
 ```ts
 type Primitive = string | number | boolean | null;
@@ -217,3 +192,50 @@ export interface Context {
     [name: string]: SafeValue;
 }
 ```
+
+## Built-in Functions
+
+Executa provides a safe set of deterministic functions available by default through `builtinFns`:
+
+```ts
+export const builtinFns: Readonly<Record<string, Function>> = Object.freeze({
+  abs: Math.abs,
+  max: Math.max,
+  min: Math.min,
+  round: Math.round,
+  floor: Math.floor,
+  ceil: Math.ceil,
+  pow: Math.pow,
+  sqrt: Math.sqrt,
+  sign: Math.sign,
+  clamp: (n: number, min: number, max: number) => Math.min(Math.max(n, min), max),
+  inRange: (n: number, min: number, max: number) => n >= min && n <= max,
+
+  length: (s: string | any[]) => s.length,
+  includes: (s: string | any[], x: any) => s.includes(x),
+
+  trim: (s: string) => s.trim(),
+  toLowerCase: (s: string, locales?: Intl.LocalesArgument) =>
+    locales ? s.toLocaleLowerCase(locales) : s.toLowerCase(),
+  toUpperCase: (s: string, locales?: Intl.LocalesArgument) =>
+    locales ? s.toLocaleUpperCase(locales) : s.toUpperCase(),
+
+  isEmpty: (x: string | any[] | null | undefined) =>
+    x == null || ((typeof x === 'string' || Array.isArray(x)) && x.length === 0),
+});
+```
+
+You can override or extend this list when creating your evaluator:
+
+```ts
+const evaluate = createEvaluator({
+  ...builtinFns,
+  upperFirst: (s: string) => s.charAt(0).toUpperCase() + s.slice(1),
+});
+```
+
+## Notes
+
+- The AST and SyntaxKind definitions remain stable across minor versions.
+- Only expressions are supported; statements and declarations are intentionally excluded.
+- The parser and evaluator are pure and side-effect-free.
